@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include ratios *.css
+recursive-include ratios *.csv
+recursive-include ratios *.html
+recursive-include ratios *.ico
+recursive-include ratios *.js
+recursive-include ratios *.json
+recursive-include ratios *.md
+recursive-include ratios *.png
+recursive-include ratios *.py
+recursive-include ratios *.svg
+recursive-include ratios *.txt
+recursive-exclude ratios *.pyc
