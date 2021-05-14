@@ -1,0 +1,41 @@
+{
+ "actions": [],
+ "creation": "2021-05-14 09:51:47.279968",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "sales_accounts"
+ ],
+ "fields": [
+  {
+   "fieldname": "sales_accounts",
+   "fieldtype": "Table",
+   "label": "Root Sales Accounts",
+   "options": "Financial Ratio Sales Account"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2021-05-14 11:39:55.446950",
+ "modified_by": "Administrator",
+ "module": "Ratios",
+ "name": "Financial Ratio Configurator",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}
