@@ -12,7 +12,6 @@ def execute(filters=None):
 	period_list = get_period_list(filters.from_fiscal_year, filters.to_fiscal_year,
 		filters.period_start_date, filters.period_end_date, filters.filter_based_on, filters.periodicity,
 		company=filters.company)
-	# print(period_list)
 
 	income = get_data(filters.company, "Income", "Credit", period_list, filters = filters,
 		accumulated_values=filters.accumulated_values,
@@ -22,8 +21,32 @@ def execute(filters=None):
 		accumulated_values=filters.accumulated_values,
 		ignore_closing_entries=True, ignore_accumulated_values_for_fy= True)
 
-	net_profit_loss = get_net_profit_loss(income, expense, period_list, filters.company, filters.presentation_currency)
+	liability = get_data(filters.company, "Liability", "Credit", period_list,
+		only_current_fiscal_year=False, filters=filters,
+		accumulated_values=filters.accumulated_values)
 
+	assets = get_data(filters.company, "Asset", "Debit", period_list,
+		only_current_fiscal_year=False, filters=filters,
+		accumulated_values=filters.accumulated_values)
+
+	assets_ = None
+
+	for i in range(len(assets) - 1, 0, -1):
+		if assets[i] and assets[i].get('account') == 'Total Asset (Debit)':
+			assets_ = assets[i]
+			break
+
+	equity = get_data(filters.company, "Equity", "Credit", period_list,
+		only_current_fiscal_year=False, filters=filters,
+		accumulated_values=filters.accumulated_values)
+
+	for i in range(len(equity) - 1, 0, -1):
+		if equity[i] and equity[i].get('account') == 'Total Equity (Credit)':
+			equity = equity[i]
+			break
+
+	net_profit_loss = get_net_profit_loss(income, expense, period_list, filters.company, filters.presentation_currency)
+	# print(equity)
 	data = []
 	p_and_l_data = []
 	p_and_l_data.extend(income or [])
@@ -32,16 +55,56 @@ def execute(filters=None):
 		p_and_l_data.append(net_profit_loss)
 
 	data.extend(get_net_profit_margin(p_and_l_data, sales_accounts_names, period_list))
+	data.extend(get_return_on_assets(net_profit_loss, assets_, period_list))
+	data.extend(get_return_on_equity(net_profit_loss, equity, period_list))
+	data.extend(get_current_ratio(assets, liability, period_list))
 
-	# print(net_profit_loss)
+	# print(equity)
 	# print('==================================================')
 	# print(p_and_l_data)
 	# print(data)
 
 	columns = get_columns(filters.periodicity, period_list, filters.accumulated_values, filters.company)
-	print(columns)
+	# print(columns)
 
 	return columns, data
+
+
+def get_current_ratio(assets, liabilities, periods):
+	asset = None
+	liability = None
+	asset_account_name = frappe.get_single('Financial Ratio Configurator').current_asset_account
+	liability_account_name = frappe.get_single('Financial Ratio Configurator').current_liability_account
+	current_ratio = {
+		'account_name': 'Current Ratio', 
+		'account': "Current Ratio",
+		'warn_if_negative': True,
+		'currency': 'NGN',
+		'total': 0
+	}
+	cummulative_assets = 0
+	cummulative_liabilities = 0
+
+	if asset_account_name:
+		for ast in assets:
+			if ast.get('account') and ast.get('account') == asset_account_name:
+				asset = ast
+				break
+
+	if liability_account_name:
+		for liab in liabilities:
+			if liab.get('account') and liab.get('account') == liability_account_name:
+				liability = liab
+				break
+
+	if asset and liability:
+		for period in periods:
+			cummulative_assets += asset[period['key']]
+			cummulative_liabilities += liability[period['key']]
+			current_ratio[period['key']] = flt((cummulative_assets or 0) / (cummulative_liabilities or 1), 2)
+			current_ratio['total'] = flt((asset['total'] or 0) / (liability['total'] or 1), 2)
+
+	return [current_ratio]
 
 
 def get_net_profit_margin(data_list, sales_accounts_names, periods):
@@ -74,6 +137,47 @@ def get_net_profit_margin(data_list, sales_accounts_names, periods):
 
 
 
+def get_return_on_assets(net_profit_loss, assets, periods):
+	r_o_a = {
+		'account_name': 'Return On Assets', 
+		'account': 'Return On Assets',
+		'warn_if_negative': True,
+		'total': 0
+	}
+
+	cummulative_net_income = 0
+	cummulative_assets = 0
+
+	for period in periods:
+		cummulative_assets += assets[period['key']]
+		cummulative_net_income = net_profit_loss[period['key']]
+		r_o_a[period['key']] = flt(cummulative_net_income / (cummulative_assets or 1), 2)
+		r_o_a['total'] = flt(net_profit_loss['total'] / max(assets['total'], 1), 2)
+
+	return [r_o_a]
+
+
+
+def get_return_on_equity(net_income, equity, periods):
+	r_o_e = {
+		'account_name': 'Return On Equity', 
+		'account': 'Return On Equity',
+		'warn_if_negative': True,
+		'total': 0
+	}
+
+	cummulative_total = 0
+	cummulative_net_income = 0
+	for period in periods:
+		cummulative_total += equity[period['key']]
+		cummulative_net_income = net_income[period['key']]
+		r_o_e[period['key']] = flt(cummulative_net_income / (cummulative_total or 1 ), 2)
+		r_o_e['total'] = flt(net_income['total'] / max(equity['total'], 1), 2)
+
+	return [r_o_e]
+
+
+
 def get_columns(periodicity, period_list, accumulated_values=1, company=None):
 	columns = [{
 		"fieldname": "account",
@@ -100,7 +204,7 @@ def get_columns(periodicity, period_list, accumulated_values=1, company=None):
 		if not accumulated_values:
 			columns.append({
 				"fieldname": "total",
-				"label": _("Total"),
+				"label": _("Year to Date"),
 				"fieldtype": "Data",
 				"width": 150
 			})

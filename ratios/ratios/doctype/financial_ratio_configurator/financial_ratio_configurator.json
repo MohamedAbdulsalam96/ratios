@@ -5,7 +5,9 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "sales_accounts"
+  "sales_accounts",
+  "current_asset_account",
+  "current_liability_account"
  ],
  "fields": [
   {
@@ -13,12 +15,24 @@
    "fieldtype": "Table",
    "label": "Root Sales Accounts",
    "options": "Financial Ratio Sales Account"
+  },
+  {
+   "fieldname": "current_asset_account",
+   "fieldtype": "Link",
+   "label": "Root Current Asset Accounts",
+   "options": "Account"
+  },
+  {
+   "fieldname": "current_liability_account",
+   "fieldtype": "Link",
+   "label": "Root Current Liability Account",
+   "options": "Account"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2021-05-14 11:39:55.446950",
+ "modified": "2021-05-15 20:54:49.788009",
  "modified_by": "Administrator",
  "module": "Ratios",
  "name": "Financial Ratio Configurator",
